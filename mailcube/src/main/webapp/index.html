@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>A Simple Page with CKEditor</title>
+<!-- Make sure the path to CKEditor is correct. -->
+<script src="ckeditor/ckeditor.js"></script>
+</head>
+<body>
+	<form action="/api/cube/mail-task" method="POST">
+	<table>
+		<tr>
+			<td>email account</td>
+			<td><input type="text" id="email" name="email" size="60" /></td>
+		</tr>
+		<tr>
+			<td>password</td>
+			<td><input type="password" id="password" name="password" size="60" /></td>
+		</tr>
+		<tr>
+			<td>mail subject</td>
+			<td><input type="text" id="subject" name="subject" size="60" /></td>
+		</tr>
+		<tr>
+			<td>attach dir</td>
+			<td><input type="text" name="attach_dir" value="D:\mail\attach" size="60" /></td>
+		</tr>
+		<tr>
+			<td>
+				receivers & greetings
+			</td>
+			<td>
+				<textarea id="receivers" name="receivers" rows="20" cols="60">
+				jimraynor@terran.com|Greetings, Commander
+				sarahkerrigan@zerg.com|Dear sarah
+				</textarea>
+			</td>
+		</tr>
+		<tr>
+			<td>mail body</td>
+			<td>
+				<textarea name="mail_body" id="mail_body" rows="20" cols="80">
+                It is my profound pleasure to welcome each and every one of you to
+                Project Blackstone. Hold your heads high, people. You are now
+                members of a select team, a group that has been handpicked by top
+                officials in Dominion intelligence and approved by Emperor Mengsk
+                hiself. You will be the front line in scientific research dedicated to the
+                protection and expansion of our empire of man throughout the Koprulu sector.
+            	</textarea>
+            	<script>CKEDITOR.replace('mail_body');</script>
+            </td>
+		</tr>
+		<tr>
+			<td colspan="2"><input type="submit" value="start job" /></td>
+		</tr>
+	</table>
+	</form>
+
+</body>
+</html>
