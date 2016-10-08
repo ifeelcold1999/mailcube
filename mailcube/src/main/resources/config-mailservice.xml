@@ -33,12 +33,4 @@
 
 	<mvc:default-servlet-handler />
 	
-	<mvc:interceptors>
-		<mvc:interceptor>
-			<mvc:mapping path="" />
-			<mvc:exclude-mapping path="" />
-			<bean class="" />
-		</mvc:interceptor>
-	</mvc:interceptors>
-	
 </beans>

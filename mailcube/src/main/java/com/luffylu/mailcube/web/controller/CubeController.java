@@ -2,12 +2,17 @@ package com.luffylu.mailcube.web.controller;
 
 import java.io.File;
 import java.io.PrintWriter;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 
+import javax.annotation.PostConstruct;
+import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,7 +22,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import com.alibaba.fastjson.JSONObject;
+import com.luffylu.mailcube.helper.AuthHelper;
 import com.luffylu.mailcube.service.SimpleMailSender;
 
 @Controller
@@ -26,16 +31,39 @@ public class CubeController {
 	
 	private static Logger logger = LoggerFactory.getLogger(CubeController.class);
 	
-	@RequestMapping("/test")
-	@ResponseBody
-	public JSONObject atest(){
-		JSONObject result = new JSONObject();
+	@Resource
+	private AuthHelper authHelper;
+	
+	private String cerDir = "/Users/lufeifei/git/mailcube/mailcube/src/main/resources/mailcube.cer";
+	
+	private String authMail = "";
+	private long deadline = 0L;
+	private String sign = "";
+	
+	boolean authenticated = false;
+	
+	@PostConstruct
+	private void init() {
+		try{
+			List<String> cer = Files.readAllLines(Paths.get(cerDir));
+			String hex = cer.get(0);
+			sign = cer.get(1);
+			if(authHelper.verifySign(hex, sign)){
+				authenticated = true;
+			}else{
+				return;
+			}
+			String plain = new String(Hex.decodeHex(cer.get(0).toCharArray()));
+			String[] plainArray = StringUtils.split(plain, "\\|");
+			authMail = plainArray[0];
+			deadline = Long.parseLong(plainArray[1]);
+		}catch(Exception e){
+			logger.error("auth fail", e);
+			throw new RuntimeException("auth fail[" + e.getMessage() + "]");
+		}
 		
-		result.put("msg", "hi");
-		
-		return result;
 	}
-
+	
 	/**
 	 * start mail sending task
 	 * @return
@@ -52,26 +80,34 @@ public class CubeController {
 			HttpServletResponse response) throws Exception {
 		
 		PrintWriter writer = response.getWriter();
-		
-		SimpleMailSender sender = new SimpleMailSender(email, password);
-		
-		String[] receiverArray = StringUtils.split(receivers, "\n");
-		
-		List<File> attachList = readAttach(attachDir);
-		
-		for(String to : receiverArray){
-			String[] toArray = StringUtils.split(to, "\\|");
-			try {
-				sender.sendWithAttach(toArray[0], subject, toArray[1] + "\n" + mailBody, attachList);
-				writer.write(toArray[0] + " done\n");
-				Thread.sleep(1000);
-			} catch (Exception e) {
-				logger.error("sending [" + toArray[0] + "] fail", e);
+		long current = System.currentTimeMillis();
+		if(!authenticated || !StringUtils.equals(authMail, email) || current > deadline){
+			writer.write("unauthenticated or authentication expired\n");
+			writer.write("please contact ifeelcold1999@163.com for authentication\n");
+			writer.flush();
+			writer.close();
+		}else{
+			SimpleMailSender sender = new SimpleMailSender(email, password);
+			
+			String[] receiverArray = StringUtils.split(receivers, "\n");
+			
+			List<File> attachList = readAttach(attachDir);
+			
+			for(String to : receiverArray){
+				String[] toArray = StringUtils.split(to, "\\|");
+				try {
+					sender.sendWithAttach(toArray[0], subject, toArray[1] + "\n" + mailBody, attachList);
+					writer.write(toArray[0] + " done\n");
+					Thread.sleep(1000);
+				} catch (Exception e) {
+					logger.error("sending [" + toArray[0] + "] fail", e);
+				}
 			}
+			
+			writer.write("all task finished\n");
+			writer.flush();
+			writer.close();
 		}
-		
-		writer.write("all task finished\n");
-		writer.flush();
 	}
 	
 	/**
