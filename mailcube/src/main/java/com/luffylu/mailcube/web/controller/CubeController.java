@@ -34,7 +34,7 @@ public class CubeController {
 	@Resource
 	private AuthHelper authHelper;
 	
-	private String cerDir = "/Users/lufeifei/git/mailcube/mailcube/src/main/resources/mailcube.cer";
+	private static final String CER_DIR = "D:\\keys\\mailcube.cer";
 	
 	private String authMail = "";
 	private long deadline = 0L;
@@ -45,7 +45,7 @@ public class CubeController {
 	@PostConstruct
 	private void init() {
 		try{
-			List<String> cer = Files.readAllLines(Paths.get(cerDir));
+			List<String> cer = Files.readAllLines(Paths.get(CER_DIR));
 			String hex = cer.get(0);
 			sign = cer.get(1);
 			if(authHelper.verifySign(hex, sign)){
@@ -53,13 +53,12 @@ public class CubeController {
 			}else{
 				return;
 			}
-			String plain = new String(Hex.decodeHex(cer.get(0).toCharArray()));
+			String plain = new String(Hex.decodeHex(hex.toCharArray()));
 			String[] plainArray = StringUtils.split(plain, "\\|");
 			authMail = plainArray[0];
 			deadline = Long.parseLong(plainArray[1]);
 		}catch(Exception e){
 			logger.error("auth fail", e);
-			throw new RuntimeException("auth fail[" + e.getMessage() + "]");
 		}
 		
 	}
